@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
-import { pool } from './db';
+import { checkConnection, pool } from './db';
 import { syncNusacontactCustomer } from './service/is';
 import { syncNusacontactContact } from './service/nusacontact';
 import { HOST, PORT } from './config';
 
 const app = new Hono()
+await checkConnection()
 
 interface SyncContactBody {
   contactNumber: string;

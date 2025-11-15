@@ -18,3 +18,25 @@ export const pool: Pool = createPool({
     waitForConnections: true,
     queueLimit: 0,
 })
+
+export async function checkConnection() {
+    try {
+        const connection = await pool.getConnection()
+        await connection.query('SELECT 1')
+        connection.release()
+        console.log('Database connection OK')
+        return true
+    } catch (error) {
+        console.error('Database connection FAILED:', error)
+        return false
+    }
+}
+
+export async function closePool() {
+    try {
+        await pool.end()
+        console.log('Database pool closed')
+    } catch (error) {
+        console.error('Error closing database pool:', error)
+    }
+}
