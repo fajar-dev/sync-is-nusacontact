@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { checkConnection, pool } from './db';
+import { pool, checkConnection } from './db';
 import { syncNusacontactCustomer } from './service/is';
 import { syncNusacontactContact } from './service/nusacontact';
-import { HOST, PORT } from './config';
+import { PORT } from './config';
 
 const app = new Hono()
 await checkConnection()
@@ -51,10 +51,8 @@ app.post('/sync-is-nusacontact', async (c) => {
 
 // Start server
 export default {
-  port:  PORT,
-  hostname: HOST,
-  host: HOST,
+  port: PORT,
   fetch: app.fetch,
 };
 
-console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+console.log(`🚀 Server running on http://localhost:${PORT}`);

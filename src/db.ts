@@ -31,12 +31,3 @@ export async function checkConnection() {
         return false
     }
 }
-
-export async function closePool() {
-    try {
-        await pool.end()
-        console.log('Database pool closed')
-    } catch (error) {
-        console.error('Error closing database pool:', error)
-    }
-}

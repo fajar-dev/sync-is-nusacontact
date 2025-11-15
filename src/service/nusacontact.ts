@@ -9,6 +9,7 @@ const SYNC_CONFIG = {
     MAX_ATTEMPTS: Number(NUSACONTACT_SYNC_CONTACT_MAX_ATTEMPTS),
     TIMEOUT: 10000,
     RETRY_DELAY: 1000,
+    RETRYABLE_CODES: [408, 429],
 }
 
 /**
@@ -28,7 +29,7 @@ export async function syncNusacontactContact(data: any): Promise<void> {
                 },
                 timeout: SYNC_CONFIG.TIMEOUT,
             })
-        } catch (error) {
+        } catch (error: any) {
             if (!axios.isAxiosError(error)) {
                 break
             }
@@ -42,8 +43,10 @@ export async function syncNusacontactContact(data: any): Promise<void> {
 
             // Non-retryable client error (4xx except 408, 429)
             if (status && status >= 400 && status < 500) {
-                console.error('[SYNC STOPPED] Non-retryable client error.')
-                break
+                if (!SYNC_CONFIG.RETRYABLE_CODES.includes(status)) {
+                    console.error('[SYNC STOPPED] Non-retryable client error.')
+                    break
+                }
             }
 
             if (attempt >= maxAttempts) {
