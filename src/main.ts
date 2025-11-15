@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { pool } from './db';
 import { syncNusacontactCustomer } from './service/is';
 import { syncNusacontactContact } from './service/nusacontact';
-import { PORT } from './config';
+import { HOST, PORT } from './config';
 
 const app = new Hono()
 
@@ -49,10 +49,10 @@ app.post('/sync-is-nusacontact', async (c) => {
 
 
 // Start server
-const port = PORT || 3000;
 export default {
-  port,
+  port:  PORT,
+  hostname: HOST,
   fetch: app.fetch,
 };
 
-console.log(`🚀 Server running on http://localhost:${port}`);
+console.log(`🚀 Server running on http://${HOST}:${PORT}`);
