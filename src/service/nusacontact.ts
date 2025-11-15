@@ -43,7 +43,7 @@ export async function syncNusacontactContact(data: any): Promise<void> {
             // Non-retryable client error (4xx except 408, 429)
             if (status && status >= 400 && status < 500) {
                 console.error('[SYNC STOPPED] Non-retryable client error.')
-                // break
+                break
             }
 
             if (attempt >= maxAttempts) {
