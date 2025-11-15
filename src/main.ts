@@ -52,6 +52,7 @@ app.post('/sync-is-nusacontact', async (c) => {
 export default {
   port:  PORT,
   hostname: HOST,
+  host: HOST,
   fetch: app.fetch,
 };
 
