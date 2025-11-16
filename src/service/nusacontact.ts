@@ -8,54 +8,67 @@ import axios from 'axios'
 const SYNC_CONFIG = {
     MAX_ATTEMPTS: Number(NUSACONTACT_SYNC_CONTACT_MAX_ATTEMPTS),
     TIMEOUT: 10000,
-    RETRY_DELAY: 1000,
+    BASE_DELAY: 1000,
     RETRYABLE_CODES: [408, 429],
 }
 
 /**
- * Sync contact data to Nusacontact API
- * @param {any} data 
- * @returns {Promise<void>}
+ * Sync contact to Nusacontact API
+ * @param data 
+ * @returns Promise<void>
  */
 export async function syncNusacontactContact(data: any): Promise<void> {
-    const maxAttempts = Number(NUSACONTACT_SYNC_CONTACT_MAX_ATTEMPTS) || SYNC_CONFIG.MAX_ATTEMPTS
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    for (let attempt = 1; attempt <= SYNC_CONFIG.MAX_ATTEMPTS; attempt++) {
         try {
-            await axios.post(NUSACONTACT_SYNC_CONTACT_API_URL, data, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Api-Key': NUSACONTACT_API_KEY,
-                },
-                timeout: SYNC_CONFIG.TIMEOUT,
-            })
+            const response = await axios.post(
+                NUSACONTACT_SYNC_CONTACT_API_URL,
+                data,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Api-Key': NUSACONTACT_API_KEY,
+                    },
+                    timeout: SYNC_CONFIG.TIMEOUT,
+                }
+            )
+
+            console.log('[SYNC SUCCESS]', response.data.message)
+            return
+
         } catch (error: any) {
             if (!axios.isAxiosError(error)) {
-                break
+                console.error('[SYNC ERROR] Unexpected error:', error)
+                return
             }
 
             const status = error.response?.status
             const message = error.response?.data || error.message
 
             console.error(
-                `[SYNC ERROR] Attempt ${attempt}/${maxAttempts} - ${status || 'No Status'}: ${message}`
+                `[SYNC ERROR] Attempt ${attempt}/${SYNC_CONFIG.MAX_ATTEMPTS} - ${status || 'No Status'}: ${message}`
             )
 
-            // Non-retryable client error (4xx except 408, 429)
+            // 4xx non-retryable
             if (status && status >= 400 && status < 500) {
                 if (!SYNC_CONFIG.RETRYABLE_CODES.includes(status)) {
-                    console.error('[SYNC STOPPED] Non-retryable client error.')
-                    break
+                    console.error('[SYNC STOPPED] Non-retryable 4xx error.')
+                    return
                 }
             }
 
-            if (attempt >= maxAttempts) {
-                console.error('[SYNC FAILED] Max retry reached.')
-                break
+            // Retry habis
+            if (attempt >= SYNC_CONFIG.MAX_ATTEMPTS) {
+                console.error('[SYNC FAILED] Max retries reached.')
+                return
             }
 
-            // Delay before retry
-            await new Promise(resolve => setTimeout(resolve, SYNC_CONFIG.RETRY_DELAY * attempt))
+            // Exponential backoff + jitter
+            const delay =
+                SYNC_CONFIG.BASE_DELAY * Math.pow(2, attempt - 1) +
+                Math.floor(Math.random() * 300)
+
+            console.log(`[SYNC RETRY] Waiting ${delay}ms before retry...`)
+            await new Promise(resolve => setTimeout(resolve, delay))
         }
     }
 }
